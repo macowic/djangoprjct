@@ -1,11 +1,14 @@
-from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
 )
+from django.utils import timezone
+from django.db import models
+from django.db.models import QuerySet
 from django.contrib.auth.base_user import BaseUserManager
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+
+from abstracts.models import AbstractDateTime
 
 
 class CustomUserManager(BaseUserManager):
@@ -43,8 +46,22 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def get_not_deleted(self) -> QuerySet['CustomUser']:
+        return self.filter(
+            datetime_deleted__isnull=True
+        )
 
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+    def get_deleted(self) -> QuerySet['CustomUser']:
+        return self.filter(
+            datetime_deleted__isnull=False
+        )
+
+
+class CustomUser(
+    AbstractBaseUser,
+    PermissionsMixin,
+    AbstractDateTime
+):
     email = models.EmailField(
         'Почта/Логин', unique=True
     )
@@ -64,6 +81,3 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         )
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-
-    
-
